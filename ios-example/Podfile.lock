@@ -1,0 +1,20 @@
+PODS:
+  - IAMPASSiOS (0.0.5)
+  - UICKeyChainStore (2.2.1)
+
+DEPENDENCIES:
+  - IAMPASSiOS
+  - UICKeyChainStore
+
+SPEC REPOS:
+  trunk:
+    - IAMPASSiOS
+    - UICKeyChainStore
+
+SPEC CHECKSUMS:
+  IAMPASSiOS: b58c91cf490df8e323a3197de88013d8df9758fb
+  UICKeyChainStore: ba3bff2c762b12db1e516f395c837dd25298b05e
+
+PODFILE CHECKSUM: ffcf4025f04431bfebbe4ffde5dc729f682c8e64
+
+COCOAPODS: 1.11.3
