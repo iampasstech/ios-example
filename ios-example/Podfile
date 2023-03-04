@@ -7,7 +7,6 @@ target 'ios-example' do
 
   # Pods for ios-example
   pod 'IAMPASSiOS'
-  pod 'UICKeyChainStore'
 
   target 'ios-exampleTests' do
     inherit! :search_paths
