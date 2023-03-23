@@ -9,19 +9,23 @@ import UIKit
 import IAMPASSiOS
 
 var NOTIFICATION_TOKEN: String = ""
+//let IAMPASS_APPLICATION_ID = "9ec1b5c10ba543dab64531dfd96ceb45"
+//let IAMPASS_APPLICATION_SECRET = "1PNAZD0XVLH8ZM1B3BQ8745KW5EX52YD"
+
+let IAMPASS_APPLICATION_ID = "e9dcd48757ae43739eed6150ea51a389"
+let IAMPASS_APPLICATION_SECRET="J5WHAK1KKRYSQ5IGB4NFPL4YSGX5GRY2"
+let IAMPASS_CONFIGURATION=IAMPASSConfiguration(server_url: URL(string: "https://dev1.iamdev-api.com")!)
+let AUTHENTICATION_UI_COMPLETE_MESSAGE = Notification.Name("AUTHENTICATION_UI_COMPLETE")
 
 
 @main
-class AppDelegate: UIResponder, UIApplicationDelegate, IPNotificationHandlerDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate{
     
-    var notificationHandler: IPNotificationHandler?
     
-
+    var notificationHandler = IPNotificationHandler()
+    
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        
-        // Initialize the notification handler.
-        notificationHandler = IPNotificationHandler(delegate: self)
         
         // Register for push notifications.
         registerForPushNotifications()
@@ -50,7 +54,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, IPNotificationHandlerDele
     /// If the registration process is successful, didRegisterForRemoteNotificationsWithDeviceToken is called.
     /// If the registration proces fails, didFailToRegisterForRemoteNotificationsWithError is called.
     /// If the process fails the application will not receive authentications requests.
-    /// The application can provide a UI for checking for authentication requests using IPMobileDevice.get_pending_requests
+    /// The application can provide a UI for checking for authentication requests using IPUser.get_pending_requests
 
     func registerForPushNotifications() {
         // The simulator does not support push notifications so we fake it using a token
@@ -73,17 +77,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate, IPNotificationHandlerDele
         #endif
     }
 
-    
-    //MARK: IPNotificationHandlerDelegate.
-    func presentAuthenticationUI(request: IAMPASSiOS.IPAuthenticationRequest, device: IAMPASSiOS.IPMobileDevice) {
-        //TODO: implement presentAuthenticationUI.
-    }
-    
     func sessionStatusChanged(status: IAMPASSiOS.IPSessionStatus) {
         //TODO: implement sessionStatusChanged.
     }
 
-    
     /// Called when the application has registered for push notifications
     func application(
       _ application: UIApplication,
@@ -100,11 +97,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate, IPNotificationHandlerDele
       didFailToRegisterForRemoteNotificationsWithError error: Error) {
     }
 
+    // This method is called when we have registered for push notifications.
+    // At this point we have to update the stored user if we have one.
+    // This ensures that IAMPASS has an up to date token to use when sending push notifications.
     func registeredForNotifications( token: String){
         NOTIFICATION_TOKEN = token
+        
+        self.updateUserData(notificationToken: NOTIFICATION_TOKEN)
     }
 
-    
     func application(
       _ application: UIApplication,
       didReceiveRemoteNotification userInfo: [AnyHashable: Any],
@@ -114,33 +115,54 @@ class AppDelegate: UIResponder, UIApplicationDelegate, IPNotificationHandlerDele
         
         // IAMPASS authentcation request notifications contain data to identify the user the request targets.
         // We have to provide the notification handler with a list of user data that is stored on this device so that it can determine whether the notification should be handled.
-        var registeredDevices: [IPMobileDevice] = []
         
         let deviceStorage = DeviceStorage()
         deviceStorage.Load()
         
-        if let mobile_device = deviceStorage.device{
-            registeredDevices.append(mobile_device)
-        }
-        
-        // We can now pass the notification payload to the IAMPASS notification handler.
-        // If the notification is an IAMPASS authentication notification the presentAuthenticationUI method will be called.
-        // If the notification is an IAMPASS session status notification the sessionStatusChanged will be called.
-        // If the ipNotification property of the return value of processNotification is true, the notification is an IAMPASS notification and the method should call completionHandler with the suggestedCompletionResult property of the return value.
-        // If the ipNotification property is false continue with normal notification handling.
-        if let notificationHandler = self.notificationHandler{
+        // Do we have a user?
+        if let user = deviceStorage.user{
+            let registeredUser = [user]
             
-            // Pass the notification to the IAMPASS notification handler.
-            let iampassResponse = notificationHandler.processNotification(userInfo: userInfo, registeredDevices: registeredDevices)
-  
-            if iampassResponse.ipNotification{
-                completionHandler(iampassResponse.suggestedCompletionResult)
-                return
-            }else{
-                //TODO: continue normal notification handling.
+            notificationHandler.processNotification(userInfo: userInfo, registeredUsers: registeredUser) { request, user in
+                // This is an authentication request for a user of this device so show the authentication UI.
+                let vc = IPAuthenticationViewController.create(request: request, device: user) { sender in
+                    // Authentication was successful
+                    sender.dismiss(animated: false) {
+                        // We send a notification now that the UI has been cleaned up so that interested
+                        // parties (ViewController) can update their state.
+                        NotificationCenter.default.post(name: AUTHENTICATION_UI_COMPLETE_MESSAGE, object: nil)
+                    }
+                } failure: { sender, error in
+                    // Authentication failed.
+                    sender.dismiss(animated: false){
+                        // We send a notification now that the UI has been cleaned up so that interested
+                        // parties (ViewController) can update their state.
+                        NotificationCenter.default.post(name: AUTHENTICATION_UI_COMPLETE_MESSAGE, object: nil)
+                    }
+                }
+                vc?.modalPresentationStyle = .fullScreen
+                vc?.modalTransitionStyle = .crossDissolve
+
+                self.topViewController()?.present(vc!, animated: true)
+
+            } onStatusChanged: { status in
+                // The notification is a session status change notification.
+                completionHandler(.noData)
+            } onError: { error in
+                // There was an error handling the notification.
+                completionHandler(.noData)
+            } onIgnore: {
+                // The notification is an IAMPASS notification but should be ignored.
+                completionHandler(.noData)
+            } defaultHandler: { userInfo in
+                // The notification is not an IAMPASS notification.
+                // The application should continue with its normal notification handling.
+                completionHandler(.noData)
             }
+
+        }else{
+            completionHandler(.noData)
         }
-        completionHandler(.noData)
     
     }
     
@@ -157,25 +179,54 @@ class AppDelegate: UIResponder, UIApplicationDelegate, IPNotificationHandlerDele
         let deviceStorage = DeviceStorage()
         deviceStorage.Load()
         
-        if let identifier = deviceStorage.identifier, let mobile_device = deviceStorage.device{
+        if let identifier = deviceStorage.identifier, let mobile_device = deviceStorage.user{
             
+            // Display a 'busy view' while we are updating the user'
+            let busyView = self.showBusyView(message: "Updating User Data")
+
             // Call IAMPASS to update the user data.
-            mobile_device.update(identifier: identifier, notification_token: notificationToken) { identifier, updated_device in
+            mobile_device.update(identifier: identifier, notification_token: notificationToken) { identifier, updated_user in
                 
                 // Save the updated user data.
-                deviceStorage.device = updated_device
+                deviceStorage.user = updated_user
                 deviceStorage.Save()
+                
+                // Hide the busy view
+                DispatchQueue.main.async {
+                    busyView.dismiss(animated: true)
+                }
                 
                 // Check if training is required.
                 if mobile_device.training_required{
-                    self.doTrainingForDevice(identifier: identifier, device: updated_device)
+                    // Do the training.
+                    self.doTrainingForDevice(identifier: identifier, device: updated_user)
                 }
 
             } failure: { identifier, error in
                 // User update failed
-                // TODO: Add UI to inform user.
+
+                DispatchQueue.main.async {
+                    // Hide the busy view controller.
+                    busyView.dismiss(animated: true)
+                    // Show an alert
+                    let alert = UIAlertController(title: "Update Failed", message: error.localizedDescription, preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                    self.topViewController()?.present(alert, animated: true)
+                }
             }
         }
+    }
+    
+    private func showBusyView( message: String) -> BusyViewController{
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        let vc = storyboard.instantiateViewController(withIdentifier: "BusyView") as! BusyViewController
+        vc.message = message
+        vc.modalPresentationStyle = .fullScreen
+        vc.modalTransitionStyle = .crossDissolve
+
+        self.topViewController()?.present(vc, animated: true)
+        return vc
+
     }
     
     /// Utility method to get a UIViewController the AppDelegate can use to present
@@ -198,7 +249,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, IPNotificationHandlerDele
 
     /// Performs training required for the specified device.
     /// This method displays the IAMPASS training view.
-    func doTrainingForDevice(identifier: Any, device: IPMobileDevice) {
+    func doTrainingForDevice(identifier: Any, device: IPUser) {
         // It is important that the code to display UI components happens
         // on the main thread.
         DispatchQueue.main.async {
@@ -210,7 +261,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, IPNotificationHandlerDele
                 if let vc = IPTrainingViewController.create(device: device, identifier: identifier, success: { sender, identifier, device in
                     // The training process completed successfuly so save the user information.
                     if let id = identifier as? String{
-                        let storage = DeviceStorage(identifier: id as String, device: device)
+                        let storage = DeviceStorage(identifier: id as String, user: device)
                         storage.Save()
                     }
                     // sender is the training UI view controller, so dismiss it.

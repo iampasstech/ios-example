@@ -15,7 +15,7 @@ import IAMPASSiOS
 class DeviceStorage{
     
     /// The IAMPASS user data.
-    var device: IPMobileDevice?
+    var user: IPUser?
     
     /// The identifier for the user (typically a username).
     var identifier: String?
@@ -24,30 +24,30 @@ class DeviceStorage{
 
     }
     
-    init( identifier: String, device: IPMobileDevice){
+    init( identifier: String, user: IPUser){
         self.identifier = identifier
-        self.device = device
+        self.user = user
     }
     
     /// Loads the user data from UserDefaults.
     func Load(){
-        var loaded_device: IPMobileDevice? = nil
+        var loaded_user: IPUser? = nil
         var loaded_identifier: String? = nil
 
         let defaults = UserDefaults.standard
-        // Get the user data, which is an IPMobileDevice serialized as JSON.
-        if let saved_device = defaults.object(forKey: "user_data") as? Data{
-            // Decode the JSON data and create an IPMobileDevice.
+        // Get the user data, which is an IPUser serialized as JSON.
+        if let saved_user = defaults.object(forKey: "user_data") as? Data{
+            // Decode the JSON data and create an IPUser.
             let decoder = JSONDecoder()
-            if let ld = try? decoder.decode(IPMobileDevice.self, from: saved_device){
-                loaded_device = ld
+            if let ld = try? decoder.decode(IPUser.self, from: saved_user){
+                loaded_user = ld
             }
             
             if let username = defaults.string(forKey: "user_name"){
                 loaded_identifier = username
             }
         }
-        self.device = loaded_device
+        self.user = loaded_user
         self.identifier = loaded_identifier
     }
     
@@ -56,7 +56,7 @@ class DeviceStorage{
     func Save(){
         let encoder = JSONEncoder()
 
-        if let id = self.identifier, let d = self.device{
+        if let id = self.identifier, let d = self.user{
         
             if let encoded = try? encoder.encode(d){
                 let defaults = UserDefaults.standard
