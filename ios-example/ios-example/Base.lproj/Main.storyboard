@@ -43,6 +43,9 @@
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="zvK-DB-Hhp" secondAttribute="bottom" constant="92" id="xG4-xV-n1P"/>
                         </constraints>
                     </view>
+                    <connections>
+                        <outlet property="loginButton" destination="DTm-Ev-NZe" id="HiE-fg-kmV"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
             </objects>

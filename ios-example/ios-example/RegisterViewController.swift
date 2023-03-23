@@ -2,7 +2,7 @@
 //  RegisterViewController.swift
 //  ios-example
 //
-//  Created by Jason Mullings on 2023-03-04.
+//  Created by IAMPASS on 2023-03-04.
 //
 
 import UIKit
@@ -40,14 +40,21 @@ class RegisterViewController: UIViewController, UITextFieldDelegate {
             if !userName.isEmpty{
                 // Register the user.
                 
-                let managementAPI = IPManagementAPI(application_id: IAMPASS_APPLICATION_ID, application_secret: IAMPASS_APPLICATION_SECRET, iampass_configuration: IAMPASS_CONFIGURATION)
+                // Create an IAMPASS management API interface using the optional custom server
+                // configuration, IAMPASS_CONFIGURATION defined in AppDelegate.swift
+                // or the default IAMPASS server.
+                let iampassConfig = IAMPASS_CONFIGURATION ?? IAMPASSConfiguration.DEFAULT_IAMPASS_CONFIGURATION
+                let managementAPI = IPManagementAPI(application_id: IAMPASS_APPLICATION_ID, application_secret: IAMPASS_APPLICATION_SECRET, iampass_configuration: iampassConfig)
                 
+                // Create a user using the supplied username and the notification token
+                // received when the app started up.
                 managementAPI.create_user_and_register_device(user: userName, notification_token: NOTIFICATION_TOKEN) { identifier, user in
                     
                     // The user has been created and this device has been registered so save the information.
                     let deviceStorage = DeviceStorage(identifier: userName, user: user)
                     deviceStorage.Save()
                     
+                    // IAMPASS may require the collection of training data.
                     // If training is required show the training UI.
                     if user.training_required{
                         // Do training for the user.
@@ -98,6 +105,5 @@ class RegisterViewController: UIViewController, UITextFieldDelegate {
             alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
             self.present(alert, animated: true)
         }
-
     }
 }

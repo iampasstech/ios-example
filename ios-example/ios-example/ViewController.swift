@@ -2,7 +2,7 @@
 //  ViewController.swift
 //  ios-example
 //
-//  Created by Jason Mullings on 2023-02-27.
+//  Created by IAMPASS on 2023-02-27.
 //
 
 import UIKit
@@ -10,6 +10,17 @@ import IAMPASSiOS
 
 
 class ViewController: UIViewController {
+    
+    // The current IAMPASS authentication sessesion.
+    private var currentSession: IPAuthenticationSession?
+    @IBOutlet weak var loginButton: UIButton!
+    
+    private var isLoggedIn: Bool {
+        if let session = self.currentSession{
+            return session.isAuthenticated
+        }
+        return false
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -24,9 +35,32 @@ class ViewController: UIViewController {
         deviceStorage.Load()
         if( deviceStorage.user == nil){
             self.showRegisterView()
+        }else{
+            self.updateUIforAuthenticationState()
         }
     }
     
+    // Updates the UI to reflect the login status of the user.
+    private func updateUIforAuthenticationState(){
+        
+        if isLoggedIn{
+            self.showLoggedIn()
+        }
+        else{
+            self.showLoggedOut()
+        }
+    }
+    
+    private func showLoggedIn(){
+        self.loginButton.setTitle("Log Out", for: UIControl.State.normal)
+    }
+    
+    private func showLoggedOut(){
+        self.loginButton.setTitle("Log In", for: UIControl.State.normal)
+
+    }
+
+    // Displays view that allows the user to register.
     private func showRegisterView(){
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
         let vc = storyboard.instantiateViewController(withIdentifier: "RegisterView")
@@ -35,11 +69,45 @@ class ViewController: UIViewController {
         self.present(vc, animated: true)
     }
     
+    
     @IBAction func onLogin(_ sender: Any) {
+        if isLoggedIn{
+            doLogout()
+        }else{
+            doLogin()
+        }
+    }
+    
+    func doLogout(){
+        // If our current session is not nil, we can simply call its endSession methid.
+        if let session = self.currentSession{
+            session.endSession {
+                DispatchQueue.main.async {
+                    self.currentSession = nil
+                    self.updateUIforAuthenticationState()
+                }
+            } failure: { error in
+                // In this case we are just going to reset to the logged out state
+                DispatchQueue.main.async {
+                    self.currentSession = nil
+                    self.updateUIforAuthenticationState()
+                }
+            }
+        }
+    }
+    
+    func doLogin(){
+        // Get the stored user information.
         let storage = DeviceStorage()
         storage.Load()
         if let _ = storage.user, let userName = storage.identifier{
-            let api = IPAuthenticationAPI(application_id: IAMPASS_APPLICATION_ID, application_secret: IAMPASS_APPLICATION_SECRET, iampass_configuration: IAMPASS_CONFIGURATION)
+            // Create an authentication API instance using the app configuration
+            // (AppDelegate.swift) or the defauly IAMPASS server configuration.
+            let iampassConfig = IAMPASS_CONFIGURATION ?? IAMPASSConfiguration.DEFAULT_IAMPASS_CONFIGURATION
+            
+            let api = IPAuthenticationAPI(application_id: IAMPASS_APPLICATION_ID,
+                                          application_secret: IAMPASS_APPLICATION_SECRET,
+                                          iampass_configuration: iampassConfig)
             
             let busyView = BusyViewController.showBusyView(presenter: self, message: "Authenticating")
             // Reset the session.
@@ -67,6 +135,8 @@ class ViewController: UIViewController {
                                 // The user is authenticated.
                                 busyView.dismiss(animated: true)
                                 self.showMessage(title: "Authenticated", message: "User Authenticated")
+                                self.currentSession = session
+                                self.updateUIforAuthenticationState()
                             }
                         }
                     } failure: { error in

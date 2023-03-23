@@ -2,32 +2,48 @@
 //  AppDelegate.swift
 //  ios-example
 //
-//  Created by Jason Mullings on 2023-02-27.
+//  Created by IAMPASS on 2023-02-27.
 //
 
 import UIKit
 import IAMPASSiOS
 
+// Global value used to store the notification token the app receives from APNS.
+// This value is used to identify this device to IAMPASS so that it knows where to
+// send authentication requests.
 var NOTIFICATION_TOKEN: String = ""
-//let IAMPASS_APPLICATION_ID = "9ec1b5c10ba543dab64531dfd96ceb45"
-//let IAMPASS_APPLICATION_SECRET = "1PNAZD0XVLH8ZM1B3BQ8745KW5EX52YD"
 
+// These values are the application ID and secret provided by IAMPASS for your application.
+// This is not necessarily the best way to store these value.
 let IAMPASS_APPLICATION_ID = "e9dcd48757ae43739eed6150ea51a389"
 let IAMPASS_APPLICATION_SECRET="J5WHAK1KKRYSQ5IGB4NFPL4YSGX5GRY2"
-let IAMPASS_CONFIGURATION=IAMPASSConfiguration(server_url: URL(string: "https://dev1.iamdev-api.com")!)
+
+// This example uses the default IAMPASS servers.
+// If you are using a custom IAMPASS server you can set IAMPASS_CONFIGURATION to
+// values appropriate for your server.
+// IAMPASSConfiguration(server_url: URL(string: "https://MY-CUSTOM-SERVER")!)
+let IAMPASS_CONFIGURATION: IAMPASSConfiguration? = nil
+
+// When an authentication request is triggered by the application (tapping the login button)
+// IAMPASS sends a push notification to the users registered device (this device).
+// The push notification is handled in AppDelegate:didReceiveRemoteNotification.
+// To code that handle the notification and displays the authentication UI posts this
+// message once the authentication UI has completed so that the rest of the app can update
+// its state.
+// If your system does not allow users to login from the mobeile application this is not
+// required.
 let AUTHENTICATION_UI_COMPLETE_MESSAGE = Notification.Name("AUTHENTICATION_UI_COMPLETE")
 
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate{
     
-    
-    var notificationHandler = IPNotificationHandler()
-    
-
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         
-        // Register for push notifications.
+        // IAMPASS communcates authentication requets to the application using Push Notifications.
+        // The application has to follow the standard rules for Push Notifications:
+        // 1) Add notification entitlement.
+        // 2) Request user permission to receive push notifications.
         registerForPushNotifications()
 
         return true
@@ -77,6 +93,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate{
         #endif
     }
 
+    /// IAMPASS allows users ot be logged out remotely.
+    /// When this happens a push notification is sent to the users registered mobile device.
     func sessionStatusChanged(status: IAMPASSiOS.IPSessionStatus) {
         //TODO: implement sessionStatusChanged.
     }
@@ -122,7 +140,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate{
         // Do we have a user?
         if let user = deviceStorage.user{
             let registeredUser = [user]
-            
+            let  notificationHandler = IPNotificationHandler()
             notificationHandler.processNotification(userInfo: userInfo, registeredUsers: registeredUser) { request, user in
                 // This is an authentication request for a user of this device so show the authentication UI.
                 let vc = IPAuthenticationViewController.create(request: request, device: user) { sender in
