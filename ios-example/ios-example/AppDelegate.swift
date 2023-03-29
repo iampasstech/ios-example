@@ -4,6 +4,10 @@
 //
 //  Created by IAMPASS on 2023-02-27.
 //
+// THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+// SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import UIKit
 import IAMPASSiOS
@@ -15,8 +19,8 @@ var NOTIFICATION_TOKEN: String = ""
 
 // These values are the application ID and secret provided by IAMPASS for your application.
 // This is not necessarily the best way to store these value.
-let IAMPASS_APPLICATION_ID = "e9dcd48757ae43739eed6150ea51a389"
-let IAMPASS_APPLICATION_SECRET="J5WHAK1KKRYSQ5IGB4NFPL4YSGX5GRY2"
+let IAMPASS_APPLICATION_ID = "MY APPLICATION ID"
+let IAMPASS_APPLICATION_SECRET="MY APPLICATION SECRET"
 
 // This example uses the default IAMPASS servers.
 // If you are using a custom IAMPASS server you can set IAMPASS_CONFIGURATION to
@@ -197,13 +201,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate{
         let deviceStorage = DeviceStorage()
         deviceStorage.Load()
         
-        if let identifier = deviceStorage.identifier, let mobile_device = deviceStorage.user{
+        if let identifier = deviceStorage.identifier, let user = deviceStorage.user{
             
             // Display a 'busy view' while we are updating the user'
             let busyView = self.showBusyView(message: "Updating User Data")
 
             // Call IAMPASS to update the user data.
-            mobile_device.update(identifier: identifier, notification_token: notificationToken) { identifier, updated_user in
+            user.update(identifier: identifier, notification_token: notificationToken) { identifier, updated_user in
                 
                 // Save the updated user data.
                 deviceStorage.user = updated_user
@@ -215,9 +219,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate{
                 }
                 
                 // Check if training is required.
-                if mobile_device.training_required{
+                if user.training_required{
                     // Do the training.
-                    self.doTrainingForDevice(identifier: identifier, device: updated_user)
+                    self.doTrainingForDevice(identifier: identifier, user: updated_user)
                 }
 
             } failure: { identifier, error in
@@ -267,7 +271,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate{
 
     /// Performs training required for the specified device.
     /// This method displays the IAMPASS training view.
-    func doTrainingForDevice(identifier: Any, device: IPUser) {
+    func doTrainingForDevice(identifier: Any, user: IPUser) {
         // It is important that the code to display UI components happens
         // on the main thread.
         DispatchQueue.main.async {
@@ -276,7 +280,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate{
             // This is used to present the training UI.
             if let topVC = self.topViewController() {
                 // Create the IAMPASS training view controller.
-                if let vc = IPTrainingViewController.create(device: device, identifier: identifier, success: { sender, identifier, device in
+                if let vc = IPTrainingViewController.create(user: user, identifier: identifier, success: { sender, identifier, device in
                     // The training process completed successfuly so save the user information.
                     if let id = identifier as? String{
                         let storage = DeviceStorage(identifier: id as String, user: device)

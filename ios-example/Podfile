@@ -6,8 +6,7 @@ target 'ios-example' do
   use_frameworks!
 
   # Pods for ios-example
-#  pod 'IAMPASSiOS'
-  pod 'IAMPASSiOS', :path => '/Users/jasonmullings1/local-repo/IAMPASSiOS'
+  pod 'IAMPASSiOS', '~>0.0.65'
   target 'ios-exampleTests' do
     inherit! :search_paths
     # Pods for testing

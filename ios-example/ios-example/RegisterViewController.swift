@@ -4,6 +4,11 @@
 //
 //  Created by IAMPASS on 2023-03-04.
 //
+// THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+// SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 
 import UIKit
 import IAMPASSiOS
@@ -73,7 +78,7 @@ class RegisterViewController: UIViewController, UITextFieldDelegate {
         // We have to make sure UI changes happen on the main thread.
         DispatchQueue.main.async {
             // This is used to present the training UI.
-            if let vc = IPTrainingViewController.create(device: user, identifier: identifier, success: { sender, identifier, device in
+            if let vc = IPTrainingViewController.create(user: user, identifier: identifier, success: { sender, identifier, device in
                 // The training process completed successfuly so save the user information.
                 if let id = identifier as? String{
                     let storage = DeviceStorage(identifier: id as String, user: user)
