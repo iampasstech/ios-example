@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>Default Configuration</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>IAMPASS uses the camera to perform biometric authentication.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>IAMPASS uses Bluetooth to verify proximity. We do not send or collect any personal information.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>IAMPASS uses Bluetooth to verify proximity. We do not send or collect any personal information.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>IAMPASS uses FaceID to verify that you can unlock the device.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>IAMPASS will not use any of your stored images.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+</dict>
+</plist>
